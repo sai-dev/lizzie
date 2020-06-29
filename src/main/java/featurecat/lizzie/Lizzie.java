@@ -3,6 +3,7 @@ package featurecat.lizzie;
 import featurecat.lizzie.analysis.EngineManager;
 import featurecat.lizzie.analysis.Leelaz;
 import featurecat.lizzie.gui.GtpConsolePane;
+import featurecat.lizzie.gui.HeatmapDialog;
 import featurecat.lizzie.gui.LizzieFrame;
 import featurecat.lizzie.gui.LizzieMain;
 import featurecat.lizzie.gui.MainFrame;
@@ -18,6 +19,7 @@ public class Lizzie {
   public static Config config;
   public static MainFrame frame;
   public static GtpConsolePane gtpConsole;
+  public static HeatmapDialog heatmap;
   public static Board board;
   public static Leelaz leelaz;
   public static String lizzieVersion = "0.7.2";
@@ -43,6 +45,8 @@ public class Lizzie {
       frame.openConfigDialog();
       System.exit(1);
     }
+    heatmap = new HeatmapDialog(frame);
+    heatmap.setVisible(config.showHeatmap);
   }
 
   public static void initializeAfterVersionCheck(Leelaz lz) {

@@ -38,6 +38,7 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,7 @@ public class BoardRenderer {
   private int cachedDisplayedBranchLength = SHOW_RAW_BOARD;
   private boolean showingBranch = false;
   private boolean isMainBoard = false;
+  private boolean isHeatmap = false;
 
   private int maxAlpha = 240;
 
@@ -123,8 +125,21 @@ public class BoardRenderer {
     this.isMainBoard = isMainBoard;
   }
 
+  public BoardRenderer(boolean isMainBoard, boolean isHeatmap) {
+    this(isMainBoard);
+    this.isHeatmap = isHeatmap;
+  }
+
   /** Draw a go board */
   public void draw(Graphics2D g) {
+    if (isHeatmap) {
+      drawGoban(g);
+      drawStones();
+      renderImages(g);
+      drawHeatmap(g);
+      return;
+    }
+
     //    setupSizeParameters();
 
     //        Stopwatch timer = new Stopwatch();
@@ -1912,6 +1927,67 @@ public class BoardRenderer {
           }
         }
       }
+    }
+  }
+
+  private void drawHeatmap(Graphics2D g) {
+    List<Integer> heatmap = new ArrayList<>(Lizzie.leelaz.getHeatmap());
+    if (heatmap.isEmpty()) return;
+
+    int minAlpha = 32;
+    float alphaFactor = 5.0f;
+    float redHue = Color.RGBtoHSB(255, 0, 0, null)[0];
+    float greenHue = Color.RGBtoHSB(0, 255, 0, null)[0];
+    float cyanHue = Color.RGBtoHSB(0, 255, 255, null)[0];
+
+    int maxHeat = Collections.max(heatmap);
+    for (int i = 0; i < heatmap.size(); i++) {
+      int heat = heatmap.get(i);
+      int y1 = i / Board.boardWidth;
+      int x1 = i % Board.boardWidth;
+      int suggestionX = x + scaledMarginWidth + squareWidth * x1;
+      int suggestionY = y + scaledMarginHeight + squareHeight * y1;
+
+      double percent = ((double) heat) / maxHeat;
+      float hue;
+      if (heat == maxHeat) {
+        hue = cyanHue;
+      } else {
+        double fraction;
+        fraction = percent;
+        // Correction to make differences between colors more perceptually linear
+        fraction *= 2;
+        if (fraction < 1) { // red to yellow
+          fraction = Math.cbrt(fraction * fraction) / 2;
+        } else { // yellow to green
+          fraction = 1 - Math.sqrt(2 - fraction) / 2;
+        }
+        hue = redHue + (greenHue - redHue) * (float) fraction;
+      }
+      float saturation = 1.0f;
+      float brightness = 0.85f;
+      float alpha =
+          minAlpha + (maxAlpha - minAlpha) * max(0, (float) log(percent) / alphaFactor + 1);
+
+      Color hsbColor = Color.getHSBColor(hue, saturation, brightness);
+      Color color =
+          new Color(hsbColor.getRed(), hsbColor.getGreen(), hsbColor.getBlue(), (int) alpha);
+      drawShadow(g, suggestionX, suggestionY, true, alpha / 255.0f);
+      g.setColor(color);
+      fillCircle(g, suggestionX, suggestionY, stoneRadius);
+
+      String text = String.format("%d", heatmap.get(i));
+      g.setColor(Color.WHITE);
+      drawString(
+          g,
+          suggestionX,
+          suggestionY,
+          LizzieFrame.winrateFont,
+          Font.PLAIN,
+          text,
+          stoneRadius,
+          stoneRadius * 1.9,
+          0);
     }
   }
 }

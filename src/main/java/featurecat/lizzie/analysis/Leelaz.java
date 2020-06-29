@@ -90,6 +90,11 @@ public class Leelaz {
   public double scoreMean = 0;
   public double scoreStdev = 0;
 
+  // Heatmap
+  private List<String> heatmapLines;
+  private List<Integer> heatmap;
+  public boolean isShowingHeatmap;
+
   /**
    * Initializes the leelaz process and starts reading output
    *
@@ -100,6 +105,9 @@ public class Leelaz {
     bestMoves = new ArrayList<>();
     bestMovesTemp = new ArrayList<>();
     listeners = new CopyOnWriteArrayList<>();
+    heatmapLines = new ArrayList<>();
+    heatmap = new ArrayList<>();
+    isShowingHeatmap = false;
 
     isPondering = false;
     startPonderTime = System.currentTimeMillis();
@@ -241,6 +249,17 @@ public class Leelaz {
     outputStream = new BufferedOutputStream(process.getOutputStream());
   }
 
+  public List<Integer> parseHeatmap() {
+    List<Integer> heatmap = new ArrayList<>();
+    for (String line: heatmapLines) {
+      String[] vals = line.trim().split("[ ]+");
+      for (String s: vals) {
+        heatmap.add(Integer.parseInt(s));
+      }
+    }
+    return heatmap;
+  }
+
   public List<MoveData> parseInfo(String line) {
     List<MoveData> bestMoves = new ArrayList<>();
     String[] variations = line.split(" info ");
@@ -356,7 +375,8 @@ public class Leelaz {
           Lizzie.board.place(line.substring(5).trim());
         }
         isThinking = false;
-
+      } else if (line.startsWith(" ")) {
+        heatmapLines.add(line);
       } else if (line.startsWith("=") || line.startsWith("?")) {
         if (printCommunication || gtpConsole) {
           System.out.print(line);
@@ -366,6 +386,13 @@ public class Leelaz {
         currentCmdNum = Integer.parseInt(params[0].substring(1).trim());
 
         trySendCommandFromQueue();
+
+        if (line.startsWith("=") && params.length == 1 && !heatmapLines.isEmpty()) {
+          heatmap = parseHeatmap();
+          heatmapLines.clear();
+          Lizzie.heatmap.repaint();
+          return;
+        }
 
         if (line.startsWith("?") || params.length == 1) return;
 
@@ -576,7 +603,16 @@ public class Leelaz {
       sendCommand("play " + colorString + " " + move);
       bestMoves = new ArrayList<>();
 
+      if (isShowingHeatmap) heatmap();
       if (isPondering && !Lizzie.frame.isPlayingAgainstLeelaz) ponder();
+    }
+  }
+
+  public void heatmap() {
+    synchronized (this) {
+      String command = "heatmap";
+      sendCommand(command);
+      if (isPondering) ponder();
     }
   }
 
@@ -590,6 +626,7 @@ public class Leelaz {
     sendCommand(command);
     isThinking = true;
     isPondering = false;
+    if (isShowingHeatmap) heatmap();
   }
 
   public void genmove_analyze(String color) {
@@ -629,6 +666,7 @@ public class Leelaz {
   public void boardSize(int width, int height) {
     synchronized (this) {
       sendCommand("boardsize " + width + (width != height ? " " + height : ""));
+      if (isShowingHeatmap) heatmap();
     }
   }
 
@@ -649,6 +687,7 @@ public class Leelaz {
     synchronized (this) {
       sendCommand("undo");
       bestMoves = new ArrayList<>();
+      if (isShowingHeatmap) heatmap();
       if (isPondering) ponder();
     }
   }
@@ -716,6 +755,10 @@ public class Leelaz {
     synchronized (this) {
       return bestMoves;
     }
+  }
+
+  public List<Integer> getHeatmap() {
+    return heatmap;
   }
 
   public Optional<String> getDynamicKomi() {

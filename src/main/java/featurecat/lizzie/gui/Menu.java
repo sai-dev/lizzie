@@ -412,6 +412,11 @@ public class Menu extends JMenuBar {
         });
     panelView.add(status);
 
+    final JCheckBoxMenuItem heatmap =
+        new JCheckBoxMenuItem(resourceBundle.getString("Menu.view.panelView.heatmap"));
+    heatmap.addActionListener((ActionEvent e) -> Lizzie.heatmap.toggle());
+    panelView.add(heatmap);
+
     final JCheckBoxMenuItem gtpConsole =
         new JCheckBoxMenuItem(resourceBundle.getString("Menu.view.panelView.gtpConsole"));
     gtpConsole.addActionListener(
@@ -983,6 +988,7 @@ public class Menu extends JMenuBar {
             else captured.setState(false);
             if (Lizzie.config.showStatus) status.setState(true);
             else status.setState(false);
+            heatmap.setState(Lizzie.heatmap.isVisible());
             if (Lizzie.gtpConsole.isVisible()) gtpConsole.setState(true);
             else gtpConsole.setState(false);
             if (Lizzie.config.showToolBar) toolBar.setState(true);

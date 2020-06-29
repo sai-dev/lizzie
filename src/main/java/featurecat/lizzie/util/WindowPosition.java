@@ -27,6 +27,7 @@ public class WindowPosition {
 
     // Main Window Position & Size
     ui.put("main-window-position", new JSONArray("[]"));
+    ui.put("heatmap-position", new JSONArray());
     ui.put("gtp-console-position", new JSONArray("[]"));
     ui.put("board-position-proportion", 4);
     // Panes
@@ -62,6 +63,13 @@ public class WindowPosition {
     }
     ui.put("main-window-position", mainPos);
 
+    JSONArray heatmapPos = new JSONArray();
+    heatmapPos.put(Lizzie.heatmap.getX());
+    heatmapPos.put(Lizzie.heatmap.getY());
+    heatmapPos.put(Lizzie.heatmap.getWidth());
+    heatmapPos.put(Lizzie.heatmap.getHeight());
+    ui.put("heatmap-position", heatmapPos);
+
     JSONArray gtpPos = new JSONArray();
     gtpPos.put(Lizzie.gtpConsole.getX());
     gtpPos.put(Lizzie.gtpConsole.getY());
@@ -91,6 +99,18 @@ public class WindowPosition {
         && Lizzie.config.persistedUi.optJSONArray("main-window-position") != null
         && Lizzie.config.persistedUi.optJSONArray("main-window-position").length() == 4) {
       return Lizzie.config.persistedUi.getJSONArray("main-window-position");
+    } else {
+      return null;
+    }
+  }
+
+  public static JSONArray gtpHeatmapPos() {
+
+    boolean persisted = Lizzie.config.persistedUi != null;
+    if (persisted
+        && Lizzie.config.persistedUi.optJSONArray("heatmap-position") != null
+        && Lizzie.config.persistedUi.optJSONArray("heatmap-position").length() == 4) {
+      return Lizzie.config.persistedUi.getJSONArray("heatmap-position");
     } else {
       return null;
     }
